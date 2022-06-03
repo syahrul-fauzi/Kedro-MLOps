@@ -1,10 +1,34 @@
 # Kedro-MlOps
 
+This project intends and define a Dev(ML)Ops pipeline On Kedro
+
 ## Overview
 
-This is your new Kedro project, which was generated using `Kedro 0.18.1`.
+This repo is divided into sessions in which you are tasked to develop different aspects of a DevOps pipeline. Bear in mind that for each exercise there is a task branch in which you will have the basic setup to start your exercise.
 
-Take a look at the [Kedro documentation](https://kedro.readthedocs.io) to get started.
+In the `main` branch you will find the terminated product of all exercises so feel free to compare your results with it. Below I am going to list the exercises of this repo along with their respective guide:
+
+1. [Develop a CI pipeline](docs/guides/ci_pipeline.md)
+2. [Develop a CD pipeline](docs/guides/cd_pipeline.md)
+
+## Setup
+
+### Configure a Virtual Environment
+
+To install de project you must have [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) and setup a Python3.7 environment as follows:
+
+```bash
+conda create --name Kedro-MlOps python=3.7 -y
+```
+
+Then you need to activate your virtualenv
+
+```bash
+conda activate Kedro-MlOps
+```
+
+> Note: if you are using windows you may need to use a cmd shell instead of a powershell to activate a conda environment
+
 
 ## Rules and guidelines
 
@@ -120,3 +144,64 @@ To automatically strip out all output cell contents before committing to `git`, 
 ## Package your Kedro project
 
 [Further information about building project documentation and packaging your project](https://kedro.readthedocs.io/en/stable/tutorial/package_a_project.html)
+
+## Run your project in Airflow
+
+The easiest way to run your project in Airflow is by [installing the Astronomer CLI](https://www.astronomer.io/docs/cloud/stable/get-started/quickstart#step-4-install-the-astronomer-cli)
+and follow the following instructions:
+
+Package your project:
+
+```shell
+kedro package
+```
+
+Copy the package at the root of the project such that the Docker images
+created by the Astronomer CLI can pick it up:
+
+```shell
+cp src/dist/*.whl ./
+```
+
+Generate a catalog file with placeholders for all the in-memory datasets:
+
+```shell
+kedro catalog create --pipeline=__default__
+```
+
+Edit the file `conf/base/catalog/__default__.yml` and choose a way to
+persist the datasets rather than store them in-memory. E.g.:
+
+```yaml
+example_train_x:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/example_train_x.pkl
+example_train_y:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/example_train_y.pkl
+example_test_x:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/example_test_x.pkl
+example_test_y:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/example_test_y.pkl
+example_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/example_model.pkl
+example_predictions:
+  type: pickle.PickleDataSet
+  filepath: data/07_model_output/example_predictions.pkl
+```
+
+Install the Kedro Airflow plugin and convert your pipeline into an Airflow dag:
+
+```shell
+pip install kedro-airflow
+kedro airflow create -t dags/
+```
+
+Run your local Airflow instance through Astronomer:
+
+```shell
+astro dev start
+```
